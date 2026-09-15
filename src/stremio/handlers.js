@@ -116,15 +116,33 @@ async function getSportsById() {
  */
 async function resolveCatalogMatches(catalogId, extra) {
   const normalizedId = String(catalogId || '').replace(/_v2$/, '');
-  if (normalizedId === 'streamed_live') return client.getMatches('live');
-  if (normalizedId === 'streamed_today') return client.getMatches('all-today');
+  const genre = extra && extra.genre ? String(extra.genre).trim() : '';
+  let sportId = genre;
+  if (genre) {
+    const sports = await client.getSports().catch(() => []);
+    const match = sports.find(
+      (sport) =>
+        String(sport.id).toLowerCase() === genre.toLowerCase() ||
+        String(sport.name).toLowerCase() === genre.toLowerCase()
+    );
+    sportId = match ? match.id : genre;
+  }
+
+  if (normalizedId === 'streamed_live') {
+    const matches = await client.getMatches('live');
+    return sportId ? matches.filter((match) => match.category === sportId) : matches;
+  }
+  if (normalizedId === 'streamed_today') {
+    const matches = await client.getMatches('all-today');
+    return sportId ? matches.filter((match) => match.category === sportId) : matches;
+  }
   if (normalizedId === 'streamed_popular') {
     const all = await client.getMatches('all');
-    return [...all].sort((a, b) => Number(Boolean(b.popular)) - Number(Boolean(a.popular)));
+    const filtered = sportId ? all.filter((match) => match.category === sportId) : all;
+    return [...filtered].sort((a, b) => Number(Boolean(b.popular)) - Number(Boolean(a.popular)));
   }
   if (normalizedId === 'streamed_by_sport') {
-    const genre = extra && extra.genre;
-    if (genre) return client.getMatches(String(genre));
+    if (sportId) return client.getMatches(String(sportId));
     return client.getMatches('all-today');
   }
   return null; // unknown catalog

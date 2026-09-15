@@ -2,6 +2,31 @@
 
 const pkg = require('../../package.json');
 
+const SPORT_OPTIONS = [
+  'Basketball',
+  'Football',
+  'American Football',
+  'Hockey',
+  'Baseball',
+  'Motor Sports',
+  'Fight (UFC, Boxing)',
+  'Tennis',
+  'Rugby',
+  'Golf',
+  'Billiards',
+  'AFL',
+  'Darts',
+  'Cricket',
+  'Other',
+];
+
+const SPORT_EXTRA = {
+  name: 'genre',
+  isRequired: false,
+  options: SPORT_OPTIONS,
+  optionsLimit: 1,
+};
+
 /**
  * Manifest for the Streamed addon. Live sports do not map to Stremio's
  * movie/series catalogs, so matches are exposed as type "tv" (the
@@ -27,17 +52,17 @@ function buildManifest(baseUrl = '') {
     types: ['tv'],
     idPrefixes: ['strmd2_', 'strmd_'],
     catalogs: [
-      { type: 'tv', id: 'streamed_live_v2', name: 'Streamed — Live Now' },
-      { type: 'tv', id: 'streamed_today_v2', name: 'Streamed — Today' },
-      { type: 'tv', id: 'streamed_popular_v2', name: 'Streamed — Popular' },
+      { type: 'tv', id: 'streamed_live_v2', name: 'Streamed — Live Now', extra: [SPORT_EXTRA] },
+      { type: 'tv', id: 'streamed_today_v2', name: 'Streamed — Today', extra: [SPORT_EXTRA] },
+      { type: 'tv', id: 'streamed_popular_v2', name: 'Streamed — Popular', extra: [SPORT_EXTRA] },
       {
         type: 'tv',
         id: 'streamed_by_sport_v2',
         name: 'Streamed — By Sport',
-        extra: [{ name: 'genre', isRequired: false }],
+        extra: [SPORT_EXTRA],
       },
     ],
   };
 }
 
-module.exports = { buildManifest };
+module.exports = { SPORT_OPTIONS, buildManifest };

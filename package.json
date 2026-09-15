@@ -1,6 +1,6 @@
 {
   "name": "streamed-addon",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Stremio addon for live sports with catalogs, metadata and in-app HLS playback.",
   "main": "src/app/server.js",
   "scripts": {
