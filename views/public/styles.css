@@ -211,6 +211,21 @@ button:active:not(:disabled) { transform: scale(0.97); }
   border-radius: 999px;
   padding: 6px 14px;
 }
+.date-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: #07080b;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
 .favorite-badge {
   position: absolute;
   top: 10px;

@@ -243,6 +243,7 @@ module.exports = {
   toStremioId,
   toVideoId,
   fromStremioId,
+  isLive,
   toMetaPreview,
   catalogHandler,
   metaHandler,

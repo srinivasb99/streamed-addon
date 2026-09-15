@@ -51,6 +51,12 @@
     return '';
   }
 
+  function startDateLabel(startTime) {
+    var date = new Date(Number(startTime));
+    if (!Number.isFinite(date.getTime())) return 'Date TBA';
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+
   function render() {
     var metas = activeSport
       ? allMetas.filter(function (m) {
@@ -60,7 +66,7 @@
         })
       : allMetas;
     if (!metas.length) {
-      gridEl.innerHTML = '<div class="live-empty">No live matches right now — check back at kickoff time.</div>';
+      gridEl.innerHTML = '<div class="live-empty">No matches available right now — check back at kickoff time.</div>';
       return;
     }
     gridEl.innerHTML = '';
@@ -93,13 +99,13 @@
         '<div class="league"></div><div class="name"></div><div class="kickoff"></div>';
       body.querySelector('.league').textContent = league;
       body.querySelector('.name').textContent = m.name;
-      body.querySelector('.kickoff').textContent = kickoffLabel(m.description);
+      body.querySelector('.kickoff').textContent = m.isLive ? kickoffLabel(m.description) : '';
       card.appendChild(poster);
       card.appendChild(shade);
-      var badge = document.createElement('span');
-      badge.className = 'live-badge';
-      badge.textContent = 'LIVE';
-      card.appendChild(badge);
+      var status = document.createElement('span');
+      status.className = m.isLive ? 'live-badge' : 'date-badge';
+      status.textContent = m.isLive ? 'LIVE' : startDateLabel(m.startTime);
+      card.appendChild(status);
       var favorite = document.createElement('span');
       favorite.className = 'favorite-badge';
       favorite.setAttribute('aria-hidden', 'true');

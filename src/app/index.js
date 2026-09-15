@@ -6,7 +6,7 @@ const express = require('express');
 const cors = require('cors');
 
 const { buildManifest } = require('../stremio/manifest');
-const { catalogHandler, metaHandler, streamHandler } = require('../stremio/handlers');
+const { catalogHandler, isLive, metaHandler, streamHandler, toMetaPreview } = require('../stremio/handlers');
 const client = require('../providers/streamed/client');
 
 /** "genre=football&search=x" -> { genre: 'football', search: 'x' } */
@@ -111,11 +111,16 @@ function createApp() {
   });
   app.get('/api/preview/live', async (req, res) => {
     try {
-      const { toMetaPreview } = require('../stremio/handlers');
       const sports = await client.getSports().catch(() => []);
       const sportsById = Object.fromEntries(sports.map((s) => [s.id, s.name]));
       const matches = await client.getMatches('live');
-      res.json({ metas: matches.slice(0, 24).map((m) => toMetaPreview(m, sportsById)) });
+      res.json({
+        metas: matches.slice(0, 24).map((m) => ({
+          ...toMetaPreview(m, sportsById),
+          isLive: isLive(m),
+          startTime: Number(m.date),
+        })),
+      });
     } catch {
       res.status(502).json({ error: 'Could not reach the Streamed API.' });
     }
