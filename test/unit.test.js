@@ -81,8 +81,9 @@ test('manifest satisfies Stremio required fields', () => {
   for (const field of ['id', 'version', 'name', 'description', 'resources', 'types', 'catalogs']) {
     assert.ok(m[field], `missing ${field}`);
   }
-  assert.ok(m.resources.includes('stream'));
-  assert.ok(m.resources.includes('catalog'));
-  assert.ok(m.resources.includes('meta'));
+  const resourceNames = m.resources.map((resource) => (typeof resource === 'string' ? resource : resource.name));
+  assert.ok(resourceNames.includes('stream'));
+  assert.ok(resourceNames.includes('catalog'));
+  assert.ok(resourceNames.includes('meta'));
   assert.ok(m.idPrefixes.includes('strmd_'));
 });

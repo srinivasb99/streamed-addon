@@ -93,8 +93,8 @@ test('metaHandler returns full meta, null for unknown', async () => {
     client.clearCache();
     const { meta } = await metaHandler({ type: 'tv', id: 'strmd_m1' });
     assert.equal(meta.name, 'Lions vs Tigers');
-    assert.ok(Array.isArray(meta.videos) && meta.videos.length === 1);
-    assert.equal(meta.behaviorHints.defaultVideoId, 'strmd_m1:play');
+    assert.equal(meta.videos, undefined);
+    assert.equal(meta.behaviorHints, undefined);
 
     assert.deepEqual(await metaHandler({ type: 'tv', id: 'strmd_missing' }), { meta: null });
     assert.deepEqual(await metaHandler({ type: 'tv', id: 'tt123' }), { meta: null });
@@ -115,6 +115,7 @@ test('streamHandler aggregates all sources and sorts HD-first', async () => {
     assert.equal(streams[2].url, 'https://embed.st/a/2');
     for (const s of streams) {
       assert.equal(s.behaviorHints.notWebReady, true);
+      assert.equal(s.behaviorHints.live, true);
       assert.ok(s.externalUrl, 'externalUrl must be set for embed pages');
       assert.ok(s.description);
     }

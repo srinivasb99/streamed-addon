@@ -18,6 +18,10 @@ light/dark mode).
   3. Preferred source order
   4. Lowest stream number
 
+Matches use Stremio's one-video `tv` model: the stream request uses the match
+meta ID (`strmd_<matchId>`). The handler also accepts the legacy `:play` suffix
+so existing installations can migrate without breaking.
+
 ## Honest limitation
 
 Streamed provides **browser embed pages** (`embed.st`), not direct video

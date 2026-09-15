@@ -6,12 +6,12 @@
  * Express (see src/app/index.js).
  *
  * ID scheme: every match is exposed as `strmd_<matchId>` where <matchId>
- * is the Streamed API match id (URL-encoded inside the Stremio id), with
- * one playable video per match at `strmd_<matchId>:play`.
+ * is the Streamed API match id (URL-encoded inside the Stremio id). Stremio's
+ * `tv` type is a one-video type, so the playable video ID is the meta ID.
+ * The older `:play` form remains accepted for already-installed manifests.
  *
- * CRITICAL: when the user presses play, Stremio requests streams with the
- * VIDEO id (`...:play`), not the meta id. Both forms must resolve to the
- * same match or playback silently returns zero streams.
+ * Both the current one-video form and the older `:play` form resolve to the
+ * same match so existing installs continue to work during the migration.
  */
 
 const client = require('../providers/streamed/client');
@@ -174,16 +174,6 @@ async function metaHandler({ type, id }) {
     const sportsById = await getSportsById();
     const preview = toMetaPreview(match, sportsById);
     const teams = match.teams || {};
-    const videos =
-      match.sources && match.sources.length
-        ? [
-            {
-              id: toVideoId(match.id),
-              title: `Watch — ${match.sources.length} source${match.sources.length === 1 ? '' : 's'} available`,
-              released: preview.releaseInfo,
-            },
-          ]
-        : [];
     return {
       meta: {
         ...preview,
@@ -195,10 +185,6 @@ async function metaHandler({ type, id }) {
         ]
           .filter(Boolean)
           .join('\n'),
-        behaviorHints: {
-          defaultVideoId: toVideoId(match.id),
-        },
-        videos,
       },
     };
   } catch {
@@ -238,6 +224,7 @@ async function streamHandler({ type, id }) {
           externalUrl: s.embedUrl,
           behaviorHints: {
             notWebReady: true,
+            live: true,
             bingeGroup: `streamed-${String(s.source || 'unknown').toLowerCase()}-${s.hd ? 'hd' : 'sd'}`,
           },
         };

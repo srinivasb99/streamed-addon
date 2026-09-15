@@ -19,7 +19,11 @@ function buildManifest(baseUrl = '') {
       'Live sports streams from Streamed (streamed.pk): football, basketball, tennis, MMA and more. ' +
       'Browse Live, Today and per-sport catalogs, then pick a sorted HD-first stream.',
     logo: baseUrl ? `${baseUrl}/assets/icon.svg` : undefined,
-    resources: ['catalog', 'meta', 'stream'],
+    resources: [
+      { name: 'catalog', types: ['tv'] },
+      { name: 'meta', types: ['tv'], idPrefixes: ['strmd_'] },
+      { name: 'stream', types: ['tv'], idPrefixes: ['strmd_'] },
+    ],
     types: ['tv'],
     idPrefixes: ['strmd_'],
     catalogs: [
