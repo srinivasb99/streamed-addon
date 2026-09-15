@@ -52,8 +52,11 @@ Install in Stremio: open `http://<host>:7000` and click **Install**, or add
 | `GET /catalog/tv/streamed_live_v2.json` | Currently live matches |
 | `GET /catalog/tv/streamed_today_v2.json` | Matches scheduled today |
 | `GET /catalog/tv/streamed_popular_v2.json` | All matches, popular first |
-| `GET /catalog/tv/streamed_by_sport_v2.json` | Today's matches, all sports |
-| `GET /catalog/tv/streamed_by_sport_v2/genre%3Dfootball.json` | Matches for one sport |
+| `GET /catalog/tv/streamed_sport_football_v2.json` | Football matches |
+| `GET /catalog/tv/streamed_sport_american-football_v2.json` | American Football matches |
+| `GET /catalog/tv/streamed_sport_tennis_v2.json` | Tennis matches |
+
+The manifest exposes first-class catalogs for every sport so Stremio’s catalog selector can filter directly by Football, American Football, Tennis, and the other supported categories. The legacy `streamed_by_sport_v2` endpoint remains accepted for existing installs.
 | `GET /meta/tv/:id.json` | Match details (`:id` = `strmd2_<matchId>`) |
 | `GET /stream/tv/:id.json` | Sorted streams for a match |
 | `GET /api/sports` | Sport list (powers the landing-page filter) |

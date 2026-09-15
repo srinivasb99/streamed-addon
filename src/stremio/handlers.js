@@ -141,6 +141,10 @@ async function resolveCatalogMatches(catalogId, extra) {
     const filtered = sportId ? all.filter((match) => match.category === sportId) : all;
     return [...filtered].sort((a, b) => Number(Boolean(b.popular)) - Number(Boolean(a.popular)));
   }
+  if (normalizedId.startsWith('streamed_sport_')) {
+    const sportId = normalizedId.slice('streamed_sport_'.length);
+    return client.getMatches(sportId);
+  }
   if (normalizedId === 'streamed_by_sport') {
     if (sportId) return client.getMatches(String(sportId));
     return client.getMatches('all-today');

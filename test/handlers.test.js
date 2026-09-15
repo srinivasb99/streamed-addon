@@ -99,6 +99,18 @@ test('catalogHandler maps friendly genre options to Streamed sport IDs', async (
   }
 });
 
+test('catalogHandler supports first-class sport catalogs', async () => {
+  const restore = stubFetch();
+  try {
+    client.clearCache();
+    const found = await catalogHandler({ type: 'tv', id: 'streamed_sport_football_v2', extra: {} });
+    assert.equal(found.metas.length, 2);
+    assert.deepEqual(found.metas.map((meta) => meta.genres[0]), ['Football', 'Football']);
+  } finally {
+    restore();
+  }
+});
+
 test('metaHandler returns full meta, null for unknown', async () => {
   const restore = stubFetch();
   try {
