@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: streamed-addon
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # No secrets required: the Streamed API needs no authentication,
+      # and this addon has no per-user config. Render injects PORT itself.

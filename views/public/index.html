@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Streamed — Stremio Addon</title>
+<link rel="icon" type="image/svg+xml" href="/assets/icon.svg" />
+<link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="wrap">
+    <div class="brand">
+      <img src="/assets/icon.svg" alt="Streamed Addon" />
+      <h1>Streamed Addon</h1>
+    </div>
+    <p class="tagline">
+      A Stremio addon for live sports from <a href="https://streamed.pk" target="_blank" rel="noopener noreferrer">streamed.pk</a>
+      — football, basketball, tennis, MMA and more. No account, no API key, nothing to configure.
+    </p>
+
+    <div class="stepper">
+      <div class="step">
+        <div class="step-card">
+          <div class="step-head">
+            <h2>See what's live</h2>
+            <p class="card-sub">A live preview of what the addon serves right now. Filter by sport, then install below to watch in Stremio.</p>
+          </div>
+          <div class="chips" id="chips" aria-label="Filter by sport">
+            <button type="button" class="chip selected" data-sport="">All sports</button>
+          </div>
+          <div class="notice blue">
+            <svg class="notice-icon" width="18" height="18" viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="20"><circle cx="128" cy="128" r="96"/><polyline points="128,72 128,128 176,160" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <div>
+              <strong>How playback works.</strong>
+              <p>Streamed provides browser embed pages, not direct video files — so in Stremio these streams open via <em>external playback</em>. Streams are sorted HD-first, English-first.</p>
+            </div>
+          </div>
+          <div class="live-grid" id="live-grid">
+            <div class="live-empty">Loading live matches…</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step step-last">
+        <div class="step-card">
+          <div class="step-head">
+            <h2>Install</h2>
+            <p class="card-sub">One manifest, everything included — Live Now, Today, Popular and per-sport catalogs.</p>
+          </div>
+          <div class="result" style="margin-top:0;padding-top:0;border-top:none;">
+            <div class="result-label">Manifest URL</div>
+            <div class="url-row">
+              <div class="url-box" id="manifest-url">…</div>
+              <button type="button" class="btn-secondary copy-btn" id="copy-btn">Copy</button>
+            </div>
+            <a class="btn-primary install-link" id="install-link" href="#">
+              Install in Stremio
+            </a>
+            <p class="hint">
+              The button opens Stremio directly and prompts to install (works if Stremio is installed on
+              this device). Otherwise, paste the URL manually: Addons → the puzzle-piece icon → paste URL →
+              Install.
+            </p>
+            <div class="notice amber">
+              <svg class="notice-icon" width="18" height="18" viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="20"><path d="M128,32 L240,200 L16,200 Z" stroke-linejoin="round"/><line x1="128" y1="96" x2="128" y2="144" stroke-linecap="round"/><circle cx="128" cy="172" r="4" fill="currentColor"/></svg>
+              <div>
+                <strong>Paste the URL exactly as shown.</strong>
+                <p>Keep the <em>:port number</em> at the end and do not change <em>http</em> to <em>https</em> — Stremio fails with “Failed to fetch: Load failed” if either is altered. This address only works on this computer; other devices need the Render deployment.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      Streamed Addon is self-hosted &amp; open-source. Data by the free
+      <a href="https://streamed.pk/docs" target="_blank" rel="noopener noreferrer">Streamed API</a>.
+    </footer>
+  </div>
+<script src="/app.js"></script>
+</body>
+</html>
