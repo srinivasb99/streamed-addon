@@ -77,7 +77,9 @@ function createApp() {
 
   // Landing page assets + app (FebBox-style config UI, static files).
   app.use('/assets', express.static(path.join(__dirname, '..', '..', 'views', 'assets'), { maxAge: '1d' }));
-  app.use(express.static(path.join(__dirname, '..', '..', 'views', 'public'), { maxAge: '1h' }));
+  // The landing page contains the current manifest origin and install
+  // instructions; do not let browsers hold an outdated deployment notice.
+  app.use(express.static(path.join(__dirname, '..', '..', 'views', 'public'), { maxAge: 0 }));
 
   // Stremio addon protocol endpoints (same handlers the SDK version used).
   app.get('/manifest.json', (req, res) => {
