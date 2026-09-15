@@ -114,7 +114,7 @@ test('streamHandler aggregates all sources and sorts HD-first', async () => {
     assert.match(streams[1].url, /^http:\/\/127\.0\.0\.1:7000\/play\/.+\.m3u8$/);
     assert.match(streams[2].url, /^http:\/\/127\.0\.0\.1:7000\/play\/.+\.m3u8$/);
     for (const s of streams) {
-      assert.equal(s.behaviorHints.notWebReady, true);
+      assert.equal(s.behaviorHints.notWebReady, undefined, 'HLS.js must be allowed to claim this HTTPS URL in Stremio Web');
       assert.equal(s.behaviorHints.live, true);
       assert.ok(s.url, 'an addon-hosted HLS URL must be set');
       assert.equal(s.externalUrl, undefined, 'externalUrl would force browser playback');

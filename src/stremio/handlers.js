@@ -225,7 +225,6 @@ async function streamHandler({ type, id, baseUrl = process.env.PUBLIC_BASE_URL |
           description: `${match.title}\n${lang} · ${quality} · Source ${source} · Stream ${s.streamNo || 1}`,
           url: playbackUrl(baseUrl, s.embedUrl),
           behaviorHints: {
-            notWebReady: true,
             live: true,
             bingeGroup: `streamed-${String(s.source || 'unknown').toLowerCase()}-${s.hd ? 'hd' : 'sd'}`,
           },
