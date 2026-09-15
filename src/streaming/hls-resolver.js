@@ -1,6 +1,7 @@
 'use strict';
 
 const fs = require('fs');
+const { Impit } = require('impit');
 const { chromium } = require('playwright-core');
 
 const EMBED_HOSTS = new Set(['embed.st']);
@@ -9,11 +10,12 @@ const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
   '(KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36';
 const SESSION_TTL_MS = 12 * 60 * 1000;
-const MAX_SESSIONS = 4;
+const MAX_SESSIONS = 32;
 
 const sessions = new Map();
 const pendingSessions = new Map();
-let browserPromise;
+const manifestClient = new Impit({ browser: 'chrome', ignoreTlsErrors: true });
+let resolverQueue = Promise.resolve();
 
 function encodeEmbedUrl(embedUrl) {
   return Buffer.from(String(embedUrl), 'utf8').toString('base64url');
@@ -49,71 +51,41 @@ function browserExecutablePath() {
   return candidates.find((candidate) => fs.existsSync(candidate)) || null;
 }
 
-async function getBrowser() {
-  if (!browserPromise) {
-    const executablePath = browserExecutablePath();
-    if (!executablePath) {
-      throw new Error('Chromium executable not found');
-    }
-    browserPromise = chromium
-      .launch({
-        headless: true,
-        executablePath,
-        args: [
-          '--no-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-background-networking',
-          '--disable-default-apps',
-          '--disable-extensions',
-          '--disable-sync',
-          '--metrics-recording-only',
-          '--mute-audio',
-          '--no-first-run',
-          '--autoplay-policy=no-user-gesture-required',
-        ],
-      })
-      .then((browser) => {
-        browser.on('disconnected', () => {
-          browserPromise = undefined;
-          sessions.clear();
-        });
-        return browser;
-      })
-      .catch((error) => {
-        browserPromise = undefined;
-        throw error;
-      });
-  }
-  return browserPromise;
-}
-
-async function closeSession(session) {
-  if (!session) return;
-  try {
-    await session.context.close();
-  } catch {
-    // The browser may already have closed.
-  }
-}
-
-async function evictExpiredSessions() {
+function evictExpiredSessions() {
   const now = Date.now();
-  const expired = [...sessions.entries()].filter(([, session]) => session.expiresAt <= now);
-  for (const [key, session] of expired) {
-    sessions.delete(key);
-    await closeSession(session);
+  for (const [key, session] of sessions) {
+    if (session.expiresAt <= now) sessions.delete(key);
   }
 
   while (sessions.size >= MAX_SESSIONS) {
     const oldest = [...sessions.entries()].sort((a, b) => a[1].lastUsedAt - b[1].lastUsedAt)[0];
     if (!oldest) break;
     sessions.delete(oldest[0]);
-    await closeSession(oldest[1]);
   }
 }
 
 async function resolveSession(embedUrl) {
-  const browser = await getBrowser();
+  const executablePath = browserExecutablePath();
+  if (!executablePath) throw new Error('Chromium executable not found');
+
+  const browser = await chromium.launch({
+    headless: true,
+    executablePath,
+    args: [
+      '--no-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-background-networking',
+      '--disable-default-apps',
+      '--disable-extensions',
+      '--disable-gpu',
+      '--disable-sync',
+      '--metrics-recording-only',
+      '--mute-audio',
+      '--no-first-run',
+      '--renderer-process-limit=1',
+      '--autoplay-policy=no-user-gesture-required',
+    ],
+  });
   const context = await browser.newContext({
     userAgent: USER_AGENT,
     viewport: { width: 1366, height: 768 },
@@ -121,20 +93,19 @@ async function resolveSession(embedUrl) {
     locale: 'en-US',
   });
   const page = await context.newPage();
-  const state = { resolved: false };
+  let manifestUrl = null;
 
   await page.route('**/*', async (route) => {
     const request = route.request();
     const type = request.resourceType();
     const url = request.url();
     if (['image', 'stylesheet', 'font'].includes(type)) return route.abort();
-    if (state.resolved && (type === 'media' || /\.(?:ts|m4s)(?:\?|$)/i.test(url))) {
+    if (manifestUrl && (type === 'media' || /\.(?:ts|m4s)(?:\?|$)/i.test(url))) {
       return route.abort();
     }
     return route.continue();
   });
 
-  let manifestUrl = null;
   page.on('response', (response) => {
     if (!manifestUrl && response.status() === 200 && /\.m3u8(?:\?|$)/i.test(response.url())) {
       manifestUrl = response.url();
@@ -160,29 +131,27 @@ async function resolveSession(embedUrl) {
     }
 
     if (!manifestUrl) throw new Error('No playable HLS request was detected');
-    state.resolved = true;
-    await page
-      .evaluate(() => {
-        for (const video of document.querySelectorAll('video')) video.pause();
-      })
-      .catch(() => {});
-
-    return {
-      context,
-      page,
-      embedUrl,
-      manifestUrl,
-      expiresAt: Date.now() + SESSION_TTL_MS,
-      lastUsedAt: Date.now(),
-    };
-  } catch (error) {
+  } finally {
     await context.close().catch(() => {});
-    throw error;
+    await browser.close().catch(() => {});
   }
+
+  return {
+    embedUrl,
+    manifestUrl,
+    expiresAt: Date.now() + SESSION_TTL_MS,
+    lastUsedAt: Date.now(),
+  };
+}
+
+function resolveOneAtATime(embedUrl) {
+  const pending = resolverQueue.then(() => resolveSession(embedUrl));
+  resolverQueue = pending.catch(() => {});
+  return pending;
 }
 
 async function getSession(embedUrl, forceRefresh = false) {
-  await evictExpiredSessions();
+  evictExpiredSessions();
   if (!forceRefresh) {
     const existing = sessions.get(embedUrl);
     if (existing) {
@@ -192,12 +161,10 @@ async function getSession(embedUrl, forceRefresh = false) {
     }
     if (pendingSessions.has(embedUrl)) return pendingSessions.get(embedUrl);
   } else {
-    const existing = sessions.get(embedUrl);
     sessions.delete(embedUrl);
-    await closeSession(existing);
   }
 
-  const pending = resolveSession(embedUrl)
+  const pending = resolveOneAtATime(embedUrl)
     .then((session) => {
       sessions.set(embedUrl, session);
       return session;
@@ -255,15 +222,24 @@ function rewriteManifest(body, upstreamUrl, playbackPath) {
     .join('\n');
 }
 
-async function fetchThroughPage(page, targetUrl) {
-  return page.evaluate(async (url) => {
-    const response = await fetch(url, { cache: 'no-store', credentials: 'omit' });
-    return {
-      status: response.status,
-      contentType: response.headers.get('content-type') || '',
-      body: await response.text(),
-    };
-  }, targetUrl);
+async function fetchManifest(targetUrl) {
+  const response = await Promise.race([
+    manifestClient.fetch(targetUrl, {
+      headers: {
+        Accept: '*/*',
+        'Accept-Language': 'en-US,en;q=0.9',
+        Origin: 'https://embed.st',
+        Referer: 'https://embed.st/',
+        'User-Agent': USER_AGENT,
+      },
+    }),
+    new Promise((_, reject) => setTimeout(() => reject(new Error('HLS manifest request timed out')), 10000)),
+  ]);
+  return {
+    status: response.status,
+    contentType: response.headers.get('content-type') || '',
+    body: await response.text(),
+  };
 }
 
 async function getPlayableManifest(embedUrl, requestedManifestUrl, playbackPath) {
@@ -271,11 +247,11 @@ async function getPlayableManifest(embedUrl, requestedManifestUrl, playbackPath)
   let targetUrl = requestedManifestUrl || session.manifestUrl;
   if (!validateManifestUrl(targetUrl)) throw new Error('Invalid stream manifest URL');
 
-  let response = await fetchThroughPage(session.page, targetUrl);
+  let response = await fetchManifest(targetUrl);
   if ([401, 403, 404].includes(response.status)) {
     session = await getSession(embedUrl, true);
-    targetUrl = requestedManifestUrl ? validateManifestUrl(requestedManifestUrl) : session.manifestUrl;
-    response = await fetchThroughPage(session.page, targetUrl);
+    targetUrl = session.manifestUrl;
+    response = await fetchManifest(targetUrl);
   }
   if (response.status < 200 || response.status >= 300 || !response.body.includes('#EXTM3U')) {
     throw new Error(`HLS manifest returned HTTP ${response.status}`);
@@ -287,14 +263,7 @@ async function getPlayableManifest(embedUrl, requestedManifestUrl, playbackPath)
 }
 
 async function closeAll() {
-  const current = [...sessions.values()];
   sessions.clear();
-  await Promise.all(current.map(closeSession));
-  if (browserPromise) {
-    const browser = await browserPromise.catch(() => null);
-    browserPromise = undefined;
-    if (browser) await browser.close().catch(() => {});
-  }
 }
 
 module.exports = {
