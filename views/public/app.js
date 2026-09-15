@@ -51,10 +51,6 @@
     return '';
   }
 
-  function isLive(match) {
-    return Boolean(match && match.isLive) || /live/i.test(String(match && match.description || ''));
-  }
-
   function render() {
     var metas = activeSport
       ? allMetas.filter(function (m) {
@@ -100,12 +96,15 @@
       body.querySelector('.kickoff').textContent = kickoffLabel(m.description);
       card.appendChild(poster);
       card.appendChild(shade);
-      if (isLive(m)) {
-        var badge = document.createElement('span');
-        badge.className = 'live-badge';
-        badge.textContent = 'LIVE';
-        card.appendChild(badge);
-      }
+      var badge = document.createElement('span');
+      badge.className = 'live-badge';
+      badge.textContent = 'LIVE';
+      card.appendChild(badge);
+      var favorite = document.createElement('span');
+      favorite.className = 'favorite-badge';
+      favorite.setAttribute('aria-hidden', 'true');
+      favorite.textContent = '☆';
+      card.appendChild(favorite);
       card.appendChild(body);
       gridEl.appendChild(card);
     });
@@ -141,9 +140,7 @@
   fetch('/api/preview/live')
     .then(function (r) { return r.json(); })
     .then(function (data) {
-      allMetas = ((data && data.metas) || []).map(function (m) {
-        return Object.assign({}, m, { isLive: true });
-      });
+      allMetas = (data && data.metas) || [];
       render();
     })
     .catch(function () {
