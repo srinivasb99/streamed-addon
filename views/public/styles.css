@@ -118,7 +118,20 @@ button:active:not(:disabled) { transform: scale(0.97); }
 .install-link { width: 100%; text-decoration: none; margin-top: 14px; }
 
 /* Sport filter chips */
-.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 88px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 2px 6px 6px 0;
+  margin-bottom: 14px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.chips::-webkit-scrollbar { width: 6px; }
+.chips::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
 .chip {
   padding: 8px 14px;
   font-size: 0.82rem;
