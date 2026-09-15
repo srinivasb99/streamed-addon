@@ -200,8 +200,10 @@ async function metaHandler({ type, id }) {
  *
  * Honesty note: Streamed provides browser embed pages (embed.st), not
  * direct video files, so each entry sets both `url` and `externalUrl`
- * to the embed page with `behaviorHints.notWebReady: true`, per the
- * Stremio docs ("externalUrl … should be opened in a browser").
+ * as `externalUrl` only with `behaviorHints.notWebReady: true`, per the
+ * Stremio docs ("externalUrl … should be opened in a browser"). Supplying
+ * the webpage as `url` makes Stremio try to load HTML as media and leaves
+ * the native player stuck on a loading timeline.
  */
 async function streamHandler({ type, id }) {
   try {
@@ -220,7 +222,6 @@ async function streamHandler({ type, id }) {
         return {
           name: `Streamed ${quality}`,
           description: `${match.title}\n${lang} · ${quality} · Source ${source} · Stream ${s.streamNo || 1}`,
-          url: s.embedUrl,
           externalUrl: s.embedUrl,
           behaviorHints: {
             notWebReady: true,

@@ -25,8 +25,8 @@ so existing installations can migrate without breaking.
 ## Honest limitation
 
 Streamed provides **browser embed pages** (`embed.st`), not direct video
-files. Each Stremio stream entry therefore sets both `url` and `externalUrl`
-to the embed page with `behaviorHints.notWebReady: true` — exactly what the
+files. Each Stremio stream entry therefore sets `externalUrl` to the embed
+page and omits `url`, with `behaviorHints.notWebReady: true` — exactly what the
 [Stremio stream docs](https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/responses/stream.md)
 prescribe for URLs "which should be opened in a browser". In Stremio clients
 these play via *open externally* / the web player, not as native direct streams.

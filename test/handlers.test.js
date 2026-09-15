@@ -117,6 +117,7 @@ test('streamHandler aggregates all sources and sorts HD-first', async () => {
       assert.equal(s.behaviorHints.notWebReady, true);
       assert.equal(s.behaviorHints.live, true);
       assert.ok(s.externalUrl, 'externalUrl must be set for embed pages');
+      assert.equal(s.url, undefined, 'HTML embed pages must not be sent as media URLs');
       assert.ok(s.description);
     }
     assert.deepEqual(await streamHandler({ type: 'tv', id: 'tt123' }), { streams: [] });
