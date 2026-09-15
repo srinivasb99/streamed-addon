@@ -110,9 +110,9 @@ test('streamHandler aggregates all sources and sorts HD-first', async () => {
     const { streams } = await streamHandler({ type: 'tv', id: 'strmd_m1' });
     assert.equal(streams.length, 3);
     // alpha HD English first, then unknown-source HD English (source rank last), then SD
-    assert.equal(streams[0].url, 'https://embed.st/a/1');
-    assert.equal(streams[1].url, 'https://embed.st/x/1');
-    assert.equal(streams[2].url, 'https://embed.st/a/2');
+    assert.equal(streams[0].externalUrl, 'https://embed.st/a/1');
+    assert.equal(streams[1].externalUrl, 'https://embed.st/x/1');
+    assert.equal(streams[2].externalUrl, 'https://embed.st/a/2');
     for (const s of streams) {
       assert.equal(s.behaviorHints.notWebReady, true);
       assert.equal(s.behaviorHints.live, true);
@@ -132,7 +132,7 @@ test('streamHandler resolves the :play video id Stremio sends on press-play', as
     client.clearCache();
     const { streams } = await streamHandler({ type: 'tv', id: 'strmd_m1:play' });
     assert.equal(streams.length, 3);
-    assert.equal(streams[0].url, 'https://embed.st/a/1');
+    assert.equal(streams[0].externalUrl, 'https://embed.st/a/1');
   } finally {
     restore();
   }
