@@ -222,7 +222,7 @@ button:active:not(:disabled) { transform: scale(0.97); }
   color: #fff;
   background: #07080b;
   border-radius: 999px;
-  padding: 6px 14px;
+  padding: 4px 10px;
   font-size: 0.7rem;
   font-weight: 800;
 }
