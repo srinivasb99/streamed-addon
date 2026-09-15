@@ -36,6 +36,7 @@ test('sortStreams orders HD, then English, then source priority, then streamNo',
 test('stremio id codec round-trips match ids with special chars', () => {
   const id = 'américa-de-cali vs deportivo/pasto?x=1';
   assert.equal(fromStremioId(toStremioId(id)), id);
+  assert.equal(fromStremioId(`strmd_${encodeURIComponent(id)}`), id);
   assert.equal(fromStremioId('tt12345'), null);
   assert.equal(fromStremioId(toStremioId(id) + '.json'), id);
 });
@@ -64,7 +65,7 @@ test('toMetaPreview builds a valid meta preview with image URLs', () => {
     },
     { football: 'Football' }
   );
-  assert.equal(preview.id, 'strmd_m1');
+  assert.equal(preview.id, 'strmd2_m1');
   assert.equal(preview.type, 'tv');
   assert.equal(preview.poster, 'https://streamed.pk/api/images/proxy/abc.webp');
   assert.deepEqual(preview.genres, ['Football']);
@@ -85,5 +86,5 @@ test('manifest satisfies Stremio required fields', () => {
   assert.ok(resourceNames.includes('stream'));
   assert.ok(resourceNames.includes('catalog'));
   assert.ok(resourceNames.includes('meta'));
-  assert.ok(m.idPrefixes.includes('strmd_'));
+  assert.ok(m.idPrefixes.includes('strmd2_'));
 });

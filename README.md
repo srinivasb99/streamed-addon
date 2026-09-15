@@ -19,7 +19,7 @@ light/dark mode).
   4. Lowest stream number
 
 Matches use Stremio's one-video `tv` model: the stream request uses the match
-meta ID (`strmd_<matchId>`). The handler also accepts the legacy `:play` suffix
+meta ID (`strmd2_<matchId>`). The handler also accepts the legacy `strmd_` prefix and `:play` suffix
 so existing installations can migrate without breaking.
 
 ## Honest limitation
@@ -49,12 +49,12 @@ Install in Stremio: open `http://<host>:7000` and click **Install**, or add
 |---|---|
 | `GET /` | Landing page: live preview + install box |
 | `GET /manifest.json` | Stremio manifest |
-| `GET /catalog/tv/streamed_live.json` | Currently live matches |
-| `GET /catalog/tv/streamed_today.json` | Matches scheduled today |
-| `GET /catalog/tv/streamed_popular.json` | All matches, popular first |
-| `GET /catalog/tv/streamed_by_sport.json` | Today's matches, all sports |
-| `GET /catalog/tv/streamed_by_sport/genre%3Dfootball.json` | Matches for one sport |
-| `GET /meta/tv/:id.json` | Match details (`:id` = `strmd_<matchId>`) |
+| `GET /catalog/tv/streamed_live_v2.json` | Currently live matches |
+| `GET /catalog/tv/streamed_today_v2.json` | Matches scheduled today |
+| `GET /catalog/tv/streamed_popular_v2.json` | All matches, popular first |
+| `GET /catalog/tv/streamed_by_sport_v2.json` | Today's matches, all sports |
+| `GET /catalog/tv/streamed_by_sport_v2/genre%3Dfootball.json` | Matches for one sport |
+| `GET /meta/tv/:id.json` | Match details (`:id` = `strmd2_<matchId>`) |
 | `GET /stream/tv/:id.json` | Sorted streams for a match |
 | `GET /api/sports` | Sport list (powers the landing-page filter) |
 | `GET /api/preview/live` | Live matches as meta previews (landing page) |

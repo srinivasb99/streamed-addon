@@ -62,9 +62,9 @@ test('catalogHandler returns sorted metas for live', async () => {
   const restore = stubFetch();
   try {
     client.clearCache();
-    const { metas } = await catalogHandler({ type: 'tv', id: 'streamed_live', extra: {} });
+    const { metas } = await catalogHandler({ type: 'tv', id: 'streamed_live_v2', extra: {} });
     assert.equal(metas.length, 2);
-    assert.equal(metas[0].id, 'strmd_m1'); // earlier kickoff first
+    assert.equal(metas[0].id, 'strmd2_m1'); // earlier kickoff first
     assert.equal(metas[0].type, 'tv');
     assert.deepEqual(metas[0].genres, ['Football']);
   } finally {
@@ -76,7 +76,7 @@ test('catalogHandler supports search + rejects bad type/catalog', async () => {
   const restore = stubFetch();
   try {
     client.clearCache();
-    const found = await catalogHandler({ type: 'tv', id: 'streamed_today', extra: { search: 'wolves' } });
+    const found = await catalogHandler({ type: 'tv', id: 'streamed_today_v2', extra: { search: 'wolves' } });
     assert.equal(found.metas.length, 1);
     assert.equal(found.metas[0].name, 'Bears vs Wolves');
 

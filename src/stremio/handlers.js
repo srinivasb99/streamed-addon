@@ -5,7 +5,7 @@
  * and returns a Promise of the response object. HTTP serving is plain
  * Express (see src/app/index.js).
  *
- * ID scheme: every match is exposed as `strmd_<matchId>` where <matchId>
+ * ID scheme: every match is exposed as `strmd2_<matchId>` where <matchId>
  * is the Streamed API match id (URL-encoded inside the Stremio id). Stremio's
  * `tv` type is a one-video type, so the playable video ID is the meta ID.
  * The older `:play` form remains accepted for already-installed manifests.
@@ -17,7 +17,8 @@
 const client = require('../providers/streamed/client');
 const { playbackUrl } = require('../streaming/hls-resolver');
 
-const ID_PREFIX = 'strmd_';
+const ID_PREFIX = 'strmd2_';
+const LEGACY_ID_PREFIX = 'strmd_';
 const STREMIO_TYPE = 'tv';
 const VIDEO_SUFFIX = ':play';
 
@@ -31,9 +32,10 @@ function toVideoId(matchId) {
 
 function fromStremioId(stremioId) {
   const clean = String(stremioId || '').replace(/\.json$/, '');
-  if (!clean.startsWith(ID_PREFIX)) return null;
+  const prefix = [ID_PREFIX, LEGACY_ID_PREFIX].find((candidate) => clean.startsWith(candidate));
+  if (!prefix) return null;
   try {
-    const decoded = decodeURIComponent(clean.slice(ID_PREFIX.length));
+    const decoded = decodeURIComponent(clean.slice(prefix.length));
     // Accept both the meta id and the video id (meta id + ":play").
     // Match ids are URL-encoded slugs, so a literal trailing ":play"
     // can only be our own video suffix — never part of a real match id.
@@ -113,13 +115,14 @@ async function getSportsById() {
  * - streamed_by_sport without genre -> today's matches across sports
  */
 async function resolveCatalogMatches(catalogId, extra) {
-  if (catalogId === 'streamed_live') return client.getMatches('live');
-  if (catalogId === 'streamed_today') return client.getMatches('all-today');
-  if (catalogId === 'streamed_popular') {
+  const normalizedId = String(catalogId || '').replace(/_v2$/, '');
+  if (normalizedId === 'streamed_live') return client.getMatches('live');
+  if (normalizedId === 'streamed_today') return client.getMatches('all-today');
+  if (normalizedId === 'streamed_popular') {
     const all = await client.getMatches('all');
     return [...all].sort((a, b) => Number(Boolean(b.popular)) - Number(Boolean(a.popular)));
   }
-  if (catalogId === 'streamed_by_sport') {
+  if (normalizedId === 'streamed_by_sport') {
     const genre = extra && extra.genre;
     if (genre) return client.getMatches(String(genre));
     return client.getMatches('all-today');
@@ -236,6 +239,7 @@ async function streamHandler({ type, id, baseUrl = process.env.PUBLIC_BASE_URL |
 
 module.exports = {
   ID_PREFIX,
+  LEGACY_ID_PREFIX,
   STREMIO_TYPE,
   VIDEO_SUFFIX,
   toStremioId,
