@@ -7,11 +7,16 @@
   var urlBox = document.getElementById('manifest-url');
   var installLink = document.getElementById('install-link');
   var copyBtn = document.getElementById('copy-btn');
+  var installNotice = document.getElementById('install-notice');
   var chipsEl = document.getElementById('chips');
   var gridEl = document.getElementById('live-grid');
 
   urlBox.textContent = manifestUrl;
   installLink.href = 'stremio://' + window.location.host + '/manifest.json';
+  var localHost = /^(localhost|127(?:\.\d{1,3}){3}|\[::1\])$/.test(window.location.hostname);
+  installNotice.textContent = localHost
+    ? 'Keep the :port number and use http for local development. This address only works on the computer running the addon.'
+    : 'Use the HTTPS manifest URL exactly as shown. This hosted addon works across devices.';
 
   copyBtn.addEventListener('click', function () {
     function done() {
