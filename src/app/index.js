@@ -109,6 +109,15 @@ function createApp() {
     const embedUrl = decodeEmbedUrl(req.params.token);
     if (!embedUrl) return res.status(400).type('text/plain').send('Invalid playback URL');
 
+    // Stremio Web probes stream URLs with HEAD before handing them to Hls.js.
+    // Do not launch the Chromium resolver for that probe; the URL is our own
+    // HTTPS HLS endpoint and its content type is known up front.
+    if (req.method === 'HEAD') {
+      res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+      return res.status(200).end();
+    }
+
     const requestedManifest = req.query.manifest ? decodeManifestUrl(req.query.manifest) : null;
     if (req.query.manifest && !requestedManifest) {
       return res.status(400).type('text/plain').send('Invalid manifest URL');
