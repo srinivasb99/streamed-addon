@@ -106,11 +106,6 @@
       status.className = m.isLive ? 'live-badge' : 'date-badge';
       status.textContent = m.isLive ? 'LIVE' : startDateLabel(m.startTime);
       card.appendChild(status);
-      var favorite = document.createElement('span');
-      favorite.className = 'favorite-badge';
-      favorite.setAttribute('aria-hidden', 'true');
-      favorite.textContent = '☆';
-      card.appendChild(favorite);
       card.appendChild(body);
       gridEl.appendChild(card);
     });

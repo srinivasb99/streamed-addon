@@ -226,22 +226,6 @@ button:active:not(:disabled) { transform: scale(0.97); }
   font-size: 0.7rem;
   font-weight: 800;
 }
-.favorite-badge {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 30px;
-  border-radius: 999px;
-  color: #fff;
-  background: #e49a00;
-  font-size: 1.35rem;
-  line-height: 1;
-}
 .live-empty {
   grid-column: 1 / -1;
   text-align: center;
