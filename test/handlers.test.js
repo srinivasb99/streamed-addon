@@ -110,14 +110,14 @@ test('streamHandler aggregates all sources and sorts HD-first', async () => {
     const { streams } = await streamHandler({ type: 'tv', id: 'strmd_m1' });
     assert.equal(streams.length, 3);
     // alpha HD English first, then unknown-source HD English (source rank last), then SD
-    assert.equal(streams[0].externalUrl, 'https://embed.st/a/1');
-    assert.equal(streams[1].externalUrl, 'https://embed.st/x/1');
-    assert.equal(streams[2].externalUrl, 'https://embed.st/a/2');
+    assert.match(streams[0].url, /^http:\/\/127\.0\.0\.1:7000\/play\/.+\.m3u8$/);
+    assert.match(streams[1].url, /^http:\/\/127\.0\.0\.1:7000\/play\/.+\.m3u8$/);
+    assert.match(streams[2].url, /^http:\/\/127\.0\.0\.1:7000\/play\/.+\.m3u8$/);
     for (const s of streams) {
       assert.equal(s.behaviorHints.notWebReady, true);
       assert.equal(s.behaviorHints.live, true);
-      assert.ok(s.externalUrl, 'externalUrl must be set for embed pages');
-      assert.equal(s.url, undefined, 'HTML embed pages must not be sent as media URLs');
+      assert.ok(s.url, 'an addon-hosted HLS URL must be set');
+      assert.equal(s.externalUrl, undefined, 'externalUrl would force browser playback');
       assert.ok(s.description);
     }
     assert.deepEqual(await streamHandler({ type: 'tv', id: 'tt123' }), { streams: [] });
@@ -132,7 +132,7 @@ test('streamHandler resolves the :play video id Stremio sends on press-play', as
     client.clearCache();
     const { streams } = await streamHandler({ type: 'tv', id: 'strmd_m1:play' });
     assert.equal(streams.length, 3);
-    assert.equal(streams[0].externalUrl, 'https://embed.st/a/1');
+    assert.match(streams[0].url, /^http:\/\/127\.0\.0\.1:7000\/play\/.+\.m3u8$/);
   } finally {
     restore();
   }

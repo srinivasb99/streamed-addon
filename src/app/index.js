@@ -8,6 +8,7 @@ const cors = require('cors');
 const { buildManifest } = require('../stremio/manifest');
 const { catalogHandler, isLive, metaHandler, streamHandler, toMetaPreview } = require('../stremio/handlers');
 const client = require('../providers/streamed/client');
+const { decodeEmbedUrl, decodeManifestUrl, getPlayableManifest } = require('../streaming/hls-resolver');
 
 /** "genre=football&search=x" -> { genre: 'football', search: 'x' } */
 function parseExtra(extraStr) {
@@ -97,9 +98,35 @@ function createApp() {
   app.get('/meta/:type/:id.json', (req, res) =>
     metaHandler({ type: req.params.type, id: req.params.id }).then((r) => res.json(r))
   );
-  app.get('/stream/:type/:id.json', (req, res) =>
-    streamHandler({ type: req.params.type, id: req.params.id }).then((r) => res.json(r))
-  );
+  app.get('/stream/:type/:id.json', (req, res) => {
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    return streamHandler({ type: req.params.type, id: req.params.id, baseUrl }).then((r) => res.json(r));
+  });
+
+  // Stremio requests this URL as media. Resolve the protected embed lazily,
+  // proxy only its small live playlist, and leave signed video segments direct.
+  app.get('/play/:token.m3u8', async (req, res) => {
+    const embedUrl = decodeEmbedUrl(req.params.token);
+    if (!embedUrl) return res.status(400).type('text/plain').send('Invalid playback URL');
+
+    const requestedManifest = req.query.manifest ? decodeManifestUrl(req.query.manifest) : null;
+    if (req.query.manifest && !requestedManifest) {
+      return res.status(400).type('text/plain').send('Invalid manifest URL');
+    }
+
+    try {
+      const playbackPath = `${req.protocol}://${req.get('host')}${req.path}`;
+      const manifest = await getPlayableManifest(embedUrl, requestedManifest, playbackPath);
+      res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+      return res.send(manifest);
+    } catch (error) {
+      console.error(
+        JSON.stringify({ msg: 'hls_resolution_failed', path: req.path, error: String(error.message || error) })
+      );
+      return res.status(502).type('text/plain').send('Live stream could not be resolved');
+    }
+  });
 
   // Extra JSON APIs powering the landing page (live preview + sport chips).
   app.get('/api/sports', async (req, res) => {

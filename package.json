@@ -1,7 +1,7 @@
 {
   "name": "streamed-addon",
-  "version": "1.0.3",
-  "description": "Stremio addon for live sports from the Streamed (streamed.pk) API — catalogs, metadata and sorted streams.",
+  "version": "1.1.0",
+  "description": "Stremio addon for live sports with catalogs, metadata and in-app HLS playback.",
   "main": "src/app/server.js",
   "scripts": {
     "start": "node src/app/server.js",
@@ -10,7 +10,8 @@
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
-    "express": "^4.21.2"
+    "express": "^4.21.2",
+    "playwright-core": "^1.55.0"
   },
   "engines": {
     "node": ">=18.0.0"

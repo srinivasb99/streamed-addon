@@ -15,6 +15,7 @@
  */
 
 const client = require('../providers/streamed/client');
+const { playbackUrl } = require('../streaming/hls-resolver');
 
 const ID_PREFIX = 'strmd_';
 const STREMIO_TYPE = 'tv';
@@ -198,14 +199,11 @@ async function metaHandler({ type, id }) {
  * Aggregates every source of the match, already sorted best-first
  * (HD → English → preferred source → lowest stream number).
  *
- * Honesty note: Streamed provides browser embed pages (embed.st), not
- * direct video files, so each entry sets both `url` and `externalUrl`
- * as `externalUrl` only with `behaviorHints.notWebReady: true`, per the
- * Stremio docs ("externalUrl … should be opened in a browser"). Supplying
- * the webpage as `url` makes Stremio try to load HTML as media and leaves
- * the native player stuck on a loading timeline.
+ * Embed pages are exposed as addon-hosted HLS resolver URLs. The resolver
+ * extracts the selected source's media playlist only when playback begins,
+ * so Stremio receives a real video URL and keeps playback in its own player.
  */
-async function streamHandler({ type, id }) {
+async function streamHandler({ type, id, baseUrl = process.env.PUBLIC_BASE_URL || 'http://127.0.0.1:7000' }) {
   try {
     if (type !== STREMIO_TYPE) return { streams: [] };
     const matchId = fromStremioId(id);
@@ -222,7 +220,7 @@ async function streamHandler({ type, id }) {
         return {
           name: `Streamed ${quality}`,
           description: `${match.title}\n${lang} · ${quality} · Source ${source} · Stream ${s.streamNo || 1}`,
-          externalUrl: s.embedUrl,
+          url: playbackUrl(baseUrl, s.embedUrl),
           behaviorHints: {
             notWebReady: true,
             live: true,

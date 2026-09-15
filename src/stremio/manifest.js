@@ -6,7 +6,7 @@ const pkg = require('../../package.json');
  * Manifest for the Streamed addon. Live sports do not map to Stremio's
  * movie/series catalogs, so matches are exposed as type "tv" (the
  * conventional type for live channels). No login or configuration is
- * required — the Streamed API is free without authentication.
+ * required.
  *
  * @param {string} [baseUrl] - origin of the running server, for the logo URL.
  */
@@ -16,7 +16,7 @@ function buildManifest(baseUrl = '') {
     version: pkg.version || '1.0.0',
     name: 'Streamed',
     description:
-      'Live sports streams from Streamed (streamed.pk): football, basketball, tennis, MMA and more. ' +
+      'Live football, basketball, tennis, MMA and more with in-app playback. ' +
       'Browse Live, Today and per-sport catalogs, then pick a sorted HD-first stream.',
     logo: baseUrl ? `${baseUrl}/assets/icon.svg` : undefined,
     resources: [

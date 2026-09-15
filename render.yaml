@@ -1,11 +1,9 @@
 services:
   - type: web
     name: streamed-addon
-    runtime: node
+    runtime: docker
     plan: free
     region: oregon
-    buildCommand: npm ci
-    startCommand: npm start
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
