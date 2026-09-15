@@ -158,17 +158,19 @@ button:active:not(:disabled) { transform: scale(0.97); }
 @media (max-width: 480px) { .live-grid { grid-template-columns: 1fr; } }
 .match-card {
   position: relative;
+  min-width: 0;
+  transition: transform .12s ease;
+}
+.match-card:hover { transform: translateY(-1px); }
+.card-media {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
   border: 1px solid var(--border);
   border-radius: 13px;
-  overflow: hidden;
   background: var(--card);
-  transition: border-color .12s ease, transform .12s ease;
-  min-height: 148px;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
 }
-.match-card:hover { border-color: var(--brand); transform: translateY(-1px); }
+.match-card:hover .card-media { border-color: var(--brand); }
 .match-card .poster {
   position: absolute;
   inset: 0;
@@ -195,20 +197,19 @@ button:active:not(:disabled) { transform: scale(0.97); }
 .match-card .shade {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(5,6,10,0.88) 20%, rgba(5,6,10,0.25) 70%, rgba(5,6,10,0.05));
+  background: linear-gradient(to top, rgba(5,6,10,0.2), rgba(5,6,10,0.02) 62%);
 }
-.match-card .body { position: relative; padding: 12px 13px; color: #fff; }
+.match-card .body { padding: 10px 2px 2px; color: var(--text); }
 .match-card .league {
   display: inline-block;
-  font-size: 0.66rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  opacity: 0.85;
-  margin-bottom: 3px;
+  color: var(--text-muted);
+  font-size: 0.86rem;
+  font-weight: 600;
 }
-.match-card .name { font-weight: 700; font-size: 0.88rem; line-height: 1.3; }
-.match-card .kickoff { font-size: 0.74rem; opacity: 0.8; margin-top: 2px; }
+.match-card .name { font-weight: 750; font-size: 1rem; line-height: 1.3; margin-bottom: 3px; }
+.meta-line { display: flex; align-items: center; gap: 7px; color: var(--text-muted); }
+.match-card .kickoff { font-size: 0.86rem; }
+.meta-separator { color: var(--text-muted); font-size: 0.9rem; }
 .live-badge {
   position: absolute;
   top: 10px;

@@ -52,6 +52,12 @@
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   }
 
+  function startTimeLabel(startTime) {
+    var date = new Date(Number(startTime));
+    if (!Number.isFinite(date.getTime())) return '';
+    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  }
+
   function render() {
     var metas = activeSport
       ? allMetas.filter(function (m) {
@@ -68,6 +74,8 @@
     metas.forEach(function (m) {
       var card = document.createElement('div');
       card.className = 'match-card';
+      var media = document.createElement('div');
+      media.className = 'card-media';
       var poster = document.createElement('div');
       poster.className = 'poster';
       if (m.background || m.poster) {
@@ -87,20 +95,22 @@
       }
       var shade = document.createElement('div');
       shade.className = 'shade';
+      media.appendChild(poster);
+      media.appendChild(shade);
       var body = document.createElement('div');
       body.className = 'body';
       var league = (m.genres && m.genres[0]) || 'Live';
       body.innerHTML =
-        '<div class="league"></div><div class="name"></div><div class="kickoff"></div>';
+        '<div class="name"></div><div class="meta-line"><span class="league"></span><span class="meta-separator"></span><span class="kickoff"></span></div>';
       body.querySelector('.league').textContent = league;
       body.querySelector('.name').textContent = m.name;
-      body.querySelector('.kickoff').textContent = m.isLive ? kickoffLabel(m.description) : '';
-      card.appendChild(poster);
-      card.appendChild(shade);
       var status = document.createElement('span');
       status.className = m.isLive ? 'live-badge' : 'date-badge';
       status.textContent = m.isLive ? 'LIVE' : startDateLabel(m.startTime);
-      card.appendChild(status);
+      media.appendChild(status);
+      card.appendChild(media);
+      body.querySelector('.meta-separator').textContent = m.isLive ? '|' : '';
+      body.querySelector('.kickoff').textContent = m.isLive ? startTimeLabel(m.startTime) : '';
       card.appendChild(body);
       gridEl.appendChild(card);
     });
