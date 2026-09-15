@@ -141,6 +141,11 @@ button:active:not(:disabled) { transform: scale(0.97); }
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
 }
+.live-section-title {
+  font-size: 1rem;
+  margin: 18px 0 10px;
+  letter-spacing: -0.01em;
+}
 @media (max-width: 820px) { .live-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 480px) { .live-grid { grid-template-columns: 1fr; } }
 .match-card {
@@ -162,6 +167,23 @@ button:active:not(:disabled) { transform: scale(0.97); }
   background-size: cover;
   background-position: center;
 }
+.match-card .poster-fallback {
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 18% 20%, rgba(255,255,255,0.12), transparent 28%),
+    linear-gradient(135deg, #260812 0%, #5a0e2d 52%, #0e2740 100%);
+}
+.poster-fallback-content {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: rgba(255,255,255,0.95);
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.poster-fallback-content img { width: 30px; height: 30px; opacity: 0.95; }
 .match-card .shade {
   position: absolute;
   inset: 0;

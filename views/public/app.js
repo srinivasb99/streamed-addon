@@ -51,8 +51,8 @@
     return '';
   }
 
-  function isLive(description) {
-    return /live/i.test(String(description || ''));
+  function isLive(match) {
+    return Boolean(match && match.isLive) || /live/i.test(String(match && match.description || ''));
   }
 
   function render() {
@@ -73,7 +73,21 @@
       card.className = 'match-card';
       var poster = document.createElement('div');
       poster.className = 'poster';
-      if (m.background || m.poster) poster.style.backgroundImage = "url('" + (m.background || m.poster) + "')";
+      if (m.background || m.poster) {
+        poster.style.backgroundImage = "url('" + (m.background || m.poster) + "')";
+      } else {
+        poster.classList.add('poster-fallback');
+        var fallback = document.createElement('div');
+        fallback.className = 'poster-fallback-content';
+        var fallbackIcon = document.createElement('img');
+        fallbackIcon.src = '/assets/icon.svg';
+        fallbackIcon.alt = '';
+        var fallbackName = document.createElement('span');
+        fallbackName.textContent = 'Streamed';
+        fallback.appendChild(fallbackIcon);
+        fallback.appendChild(fallbackName);
+        poster.appendChild(fallback);
+      }
       var shade = document.createElement('div');
       shade.className = 'shade';
       var body = document.createElement('div');
@@ -86,7 +100,7 @@
       body.querySelector('.kickoff').textContent = kickoffLabel(m.description);
       card.appendChild(poster);
       card.appendChild(shade);
-      if (isLive(m.description)) {
+      if (isLive(m)) {
         var badge = document.createElement('span');
         badge.className = 'live-badge';
         badge.textContent = 'LIVE';
@@ -127,7 +141,9 @@
   fetch('/api/preview/live')
     .then(function (r) { return r.json(); })
     .then(function (data) {
-      allMetas = (data && data.metas) || [];
+      allMetas = ((data && data.metas) || []).map(function (m) {
+        return Object.assign({}, m, { isLive: true });
+      });
       render();
     })
     .catch(function () {
