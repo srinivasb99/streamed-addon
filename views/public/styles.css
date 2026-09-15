@@ -209,7 +209,7 @@ button:active:not(:disabled) { transform: scale(0.97); }
   color: #fff;
   background: var(--live);
   border-radius: 999px;
-  padding: 6px 14px;
+  padding: 4px 10px;
 }
 .date-badge {
   position: absolute;
