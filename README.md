@@ -58,6 +58,7 @@ Install in Stremio: open `http://<host>:7000` and click **Install**, or add
 | `GET /stream/tv/:id.json` | Sorted streams for a match |
 | `GET /api/sports` | Sport list (powers the landing-page filter) |
 | `GET /api/preview/live` | Live matches as meta previews (landing page) |
+| `GET /api/preview/today` | All matches scheduled today as meta previews (landing page) |
 | `GET /health` | Health check (also the Render health check path) |
 
 ## Project layout

@@ -125,6 +125,22 @@ function createApp() {
       res.status(502).json({ error: 'Could not reach the Streamed API.' });
     }
   });
+  app.get('/api/preview/today', async (req, res) => {
+    try {
+      const sports = await client.getSports().catch(() => []);
+      const sportsById = Object.fromEntries(sports.map((s) => [s.id, s.name]));
+      const matches = await client.getMatches('all-today');
+      res.json({
+        metas: matches.map((m) => ({
+          ...toMetaPreview(m, sportsById),
+          isLive: isLive(m),
+          startTime: Number(m.date),
+        })),
+      });
+    } catch {
+      res.status(502).json({ error: 'Could not reach the Streamed API.' });
+    }
+  });
 
   // Generic error handler: never leak stack traces.
   // eslint-disable-next-line no-unused-vars

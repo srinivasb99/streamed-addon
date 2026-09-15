@@ -66,11 +66,11 @@
         })
       : allMetas;
     if (!metas.length) {
-      gridEl.innerHTML = '<div class="live-empty">No matches available right now — check back at kickoff time.</div>';
+      gridEl.innerHTML = '<div class="live-empty">No matches scheduled today.</div>';
       return;
     }
     gridEl.innerHTML = '';
-    metas.slice(0, 12).forEach(function (m) {
+    metas.forEach(function (m) {
       var card = document.createElement('div');
       card.className = 'match-card';
       var poster = document.createElement('div');
@@ -138,7 +138,7 @@
     selectSport('', this);
   });
 
-  fetch('/api/preview/live')
+  fetch('/api/preview/today')
     .then(function (r) { return r.json(); })
     .then(function (data) {
       allMetas = (data && data.metas) || [];
