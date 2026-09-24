@@ -87,6 +87,18 @@ test('catalogHandler supports search + rejects bad type/catalog', async () => {
   }
 });
 
+test('catalogHandler honors Stremio skip pagination', async () => {
+  const restore = stubFetch();
+  try {
+    client.clearCache();
+    const { metas } = await catalogHandler({ type: 'tv', id: 'streamed_today_v2', extra: { skip: '1' } });
+    assert.equal(metas.length, 1);
+    assert.equal(metas[0].name, 'Bears vs Wolves');
+  } finally {
+    restore();
+  }
+});
+
 test('catalogHandler maps friendly genre options to Streamed sport IDs', async () => {
   const restore = stubFetch();
   try {
@@ -139,7 +151,7 @@ test('streamHandler aggregates all sources and sorts HD-first', async () => {
     assert.match(streams[2].url, /^http:\/\/127\.0\.0\.1:7000\/play\/.+\.m3u8$/);
     for (const s of streams) {
       assert.equal(s.behaviorHints.notWebReady, undefined, 'HLS.js must be allowed to claim this HTTPS URL in Stremio Web');
-      assert.equal(s.behaviorHints.live, true);
+      assert.equal(s.behaviorHints.live, undefined);
       assert.ok(s.url, 'an addon-hosted HLS URL must be set');
       assert.equal(s.externalUrl, undefined, 'externalUrl would force browser playback');
       assert.ok(s.description);

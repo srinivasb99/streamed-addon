@@ -31,7 +31,7 @@ test('manifest URL round-trips only the stream CDN', () => {
   assert.equal(decodeManifestUrl(encodeManifestUrl('https://example.com/file.m3u8')), null);
 });
 
-test('rewriteManifest makes segments absolute and keeps nested playlists on the resolver', () => {
+test('rewriteManifest proxies segments and keys while keeping nested playlists on the resolver', () => {
   const upstream = 'https://lb2.strmd.st/secure/token/source/event/1/master.m3u8';
   const path = 'https://addon.example/play/embed-token.m3u8';
   const input = [
@@ -44,7 +44,16 @@ test('rewriteManifest makes segments absolute and keeps nested playlists on the 
   ].join('\n');
   const output = rewriteManifest(input, upstream, path);
 
-  assert.match(output, /URI="https:\/\/lb2\.strmd\.st\/secure\/token\/source\/event\/1\/keys\/live\.key"/);
+  const keyPath = output.match(/URI="([^"]+)"/)[1];
+  assert.equal(
+    decodeManifestUrl(new URL(keyPath).pathname.split('/').at(-1)),
+    'https://lb2.strmd.st/secure/token/source/event/1/keys/live.key'
+  );
   assert.match(output, new RegExp(`${path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\?manifest=`));
-  assert.match(output, /https:\/\/lb2\.strmd\.st\/media\/segment\.ts\?sig=abc/);
+  const segmentPath = output.split('\n').at(-1);
+  assert.match(segmentPath, /^https:\/\/addon\.example\/resource\//);
+  assert.equal(
+    decodeManifestUrl(new URL(segmentPath).pathname.split('/').at(-1)),
+    'https://lb2.strmd.st/media/segment.ts?sig=abc'
+  );
 });

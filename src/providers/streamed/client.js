@@ -42,13 +42,24 @@ function clearCache() {
 }
 
 async function fetchJson(path) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: { Accept: 'application/json', 'User-Agent': 'streamed-stremio-addon/1.0' },
-  });
-  if (!res.ok) {
-    throw new Error(`Streamed API ${path} responded with HTTP ${res.status}`);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
+  try {
+    const res = await fetch(`${API_BASE}${path}`, {
+      headers: { Accept: 'application/json', 'User-Agent': 'streamed-stremio-addon/1.0' },
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      throw new Error(`Streamed API ${path} responded with HTTP ${res.status}`);
+    }
+    try {
+      return await res.json();
+    } catch (error) {
+      throw new Error(`Streamed API ${path} returned invalid JSON`, { cause: error });
+    }
+  } finally {
+    clearTimeout(timeout);
   }
-  return res.json();
 }
 
 /** @returns {Promise<Array<{id:string,name:string}>>} */
@@ -184,11 +195,12 @@ async function getStreamsForMatch(match) {
  * - badge ids ("GwZg7...")  -> /api/images/badge/[id].webp
  * - poster paths ("/api/images/proxy/....webp") -> as-is on the API host
  */
-function imageUrl(ref) {
+function imageUrl(ref, kind = 'badge') {
   if (!ref || typeof ref !== 'string') return null;
   if (ref.startsWith('http://') || ref.startsWith('https://')) return ref;
   if (ref.startsWith('/')) return `${API_BASE}${ref}`;
-  return `${API_BASE}/api/images/badge/${ref}.webp`;
+  const endpoint = kind === 'poster' ? 'proxy' : 'badge';
+  return `${API_BASE}/api/images/${endpoint}/${encodeURIComponent(ref)}.webp`;
 }
 
 module.exports = {

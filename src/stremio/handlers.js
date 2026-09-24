@@ -74,8 +74,8 @@ function toMetaPreview(match, sportsById = {}) {
   const teams = (match && match.teams) || {};
   const home = teams.home && teams.home.name;
   const away = teams.away && teams.away.name;
-  const poster = client.imageUrl(match.poster) || client.imageUrl(home && teams.home.badge);
-  const background = client.imageUrl(match.poster);
+  const poster = client.imageUrl(match.poster, 'poster') || client.imageUrl(home && teams.home.badge);
+  const background = client.imageUrl(match.poster, 'poster');
   const logo = client.imageUrl(home && teams.home.badge) || client.imageUrl(away && teams.away.badge);
   const sportName = sportsById[match.category] || sportLabel(match.category);
 
@@ -175,14 +175,23 @@ async function catalogHandler({ type, id, extra }) {
       filtered = matches.filter((m) => String((m && m.title) || '').toLowerCase().includes(q));
     }
 
-    // Live first, then chronological kickoff order.
+    // Keep the Popular catalog useful while prioritizing live events elsewhere.
+    const isPopularCatalog = String(id || '').replace(/_v2$/, '') === 'streamed_popular';
     filtered = [...filtered].sort((a, b) => {
+      if (isPopularCatalog) {
+        const popularDiff = Number(Boolean(b.popular)) - Number(Boolean(a.popular));
+        if (popularDiff !== 0) return popularDiff;
+      }
       const liveDiff = Number(isLive(b)) - Number(isLive(a));
       if (liveDiff !== 0) return liveDiff;
       return Number(a.date || 0) - Number(b.date || 0);
     });
 
-    return { metas: filtered.slice(0, 100).map((m) => toMetaPreview(m, sportsById)) };
+    // Stremio uses `skip` for catalog pagination. Returning the same first
+    // page for every request makes large catalogs impossible to browse.
+    const parsedSkip = Number.parseInt(extra && extra.skip, 10);
+    const skip = Number.isFinite(parsedSkip) ? Math.max(0, parsedSkip) : 0;
+    return { metas: filtered.slice(skip, skip + 100).map((m) => toMetaPreview(m, sportsById)) };
   } catch {
     return { metas: [] };
   }
@@ -247,7 +256,6 @@ async function streamHandler({ type, id, baseUrl = process.env.PUBLIC_BASE_URL |
           description: `${match.title}\n${lang} · ${quality} · Source ${source} · Stream ${s.streamNo || 1}`,
           url: playbackUrl(baseUrl, s.embedUrl),
           behaviorHints: {
-            live: true,
             bingeGroup: `streamed-${String(s.source || 'unknown').toLowerCase()}-${s.hd ? 'hd' : 'sd'}`,
           },
         };

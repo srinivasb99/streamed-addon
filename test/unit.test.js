@@ -10,6 +10,14 @@ const assert = require('node:assert/strict');
 const client = require('../src/providers/streamed/client');
 const { buildManifest } = require('../src/stremio/manifest');
 const { toStremioId, toVideoId, fromStremioId, toMetaPreview } = require('../src/stremio/handlers');
+const { parseExtra } = require('../src/app');
+
+test('Stremio extra path decodes spaces, plus signs, and pagination values', () => {
+  assert.deepEqual(parseExtra('search=New+York+%26+LA&skip=100'), {
+    search: 'New York & LA',
+    skip: '100',
+  });
+});
 
 test('sortStreams orders HD, then English, then source priority, then streamNo', () => {
   const input = [
@@ -73,6 +81,7 @@ test('toMetaPreview builds a valid meta preview with image URLs', () => {
 
 test('imageUrl resolves badge ids and absolute paths', () => {
   assert.equal(client.imageUrl('badgeA'), 'https://streamed.pk/api/images/badge/badgeA.webp');
+  assert.equal(client.imageUrl('posterA', 'poster'), 'https://streamed.pk/api/images/proxy/posterA.webp');
   assert.equal(client.imageUrl('/api/images/proxy/x.webp'), 'https://streamed.pk/api/images/proxy/x.webp');
   assert.equal(client.imageUrl(null), null);
 });

@@ -177,7 +177,13 @@ async function getSession(embedUrl, forceRefresh = false) {
 function validateManifestUrl(value) {
   try {
     const parsed = new URL(value);
-    return parsed.protocol === 'https:' && STREAM_HOST_PATTERN.test(parsed.hostname) ? parsed.toString() : null;
+    return parsed.protocol === 'https:' &&
+      STREAM_HOST_PATTERN.test(parsed.hostname) &&
+      (!parsed.port || parsed.port === '443') &&
+      !parsed.username &&
+      !parsed.password
+      ? parsed.toString()
+      : null;
   } catch {
     return null;
   }
@@ -196,6 +202,13 @@ function decodeManifestUrl(value) {
   }
 }
 
+function resourceProxyUrl(playbackPath, resourceUrl) {
+  const validatedUrl = validateManifestUrl(resourceUrl);
+  if (!validatedUrl) throw new Error('Unsupported HLS resource URL');
+  const playback = new URL(playbackPath);
+  return `${playback.origin}/resource/${encodeManifestUrl(validatedUrl)}`;
+}
+
 function rewriteManifest(body, upstreamUrl, playbackPath) {
   return String(body)
     .split(/\r?\n/)
@@ -208,38 +221,61 @@ function rewriteManifest(body, upstreamUrl, playbackPath) {
         if (/\.m3u8(?:\?|$)/i.test(absolute)) {
           return `${playbackPath}?manifest=${encodeURIComponent(encodeManifestUrl(absolute))}`;
         }
-        return absolute;
+        return resourceProxyUrl(playbackPath, absolute);
       }
 
-      return line.replace(/URI="([^"]+)"/g, (match, uri) => {
-        try {
-          return `URI="${new URL(uri, upstreamUrl).toString()}"`;
-        } catch {
-          return match;
-        }
+      return line.replace(/URI="([^"]+)"/g, (_match, uri) => {
+        const absolute = new URL(uri, upstreamUrl).toString();
+        const rewritten = /\.m3u8(?:\?|$)/i.test(absolute)
+          ? `${playbackPath}?manifest=${encodeURIComponent(encodeManifestUrl(absolute))}`
+          : resourceProxyUrl(playbackPath, absolute);
+        return `URI="${rewritten}"`;
       });
     })
     .join('\n');
 }
 
 async function fetchManifest(targetUrl) {
-  const response = await Promise.race([
-    manifestClient.fetch(targetUrl, {
-      headers: {
-        Accept: '*/*',
-        'Accept-Language': 'en-US,en;q=0.9',
-        Origin: 'https://embed.st',
-        Referer: 'https://embed.st/',
-        'User-Agent': USER_AGENT,
-      },
-    }),
-    new Promise((_, reject) => setTimeout(() => reject(new Error('HLS manifest request timed out')), 10000)),
-  ]);
+  const response = await fetchStreamedResource(targetUrl);
   return {
     status: response.status,
     contentType: response.headers.get('content-type') || '',
     body: await response.text(),
   };
+}
+
+async function fetchStreamedResource(targetUrl, { method = 'GET', range } = {}) {
+  const validatedUrl = validateManifestUrl(targetUrl);
+  if (!validatedUrl) throw new Error('Invalid HLS resource URL');
+
+  const headers = {
+    Accept: '*/*',
+    'Accept-Encoding': 'identity',
+    'Accept-Language': 'en-US,en;q=0.9',
+    Origin: 'https://embed.st',
+    Referer: 'https://embed.st/',
+    'User-Agent': USER_AGENT,
+  };
+  if (typeof range === 'string' && /^bytes=\d*-\d*$/.test(range)) headers.Range = range;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+  let response;
+  try {
+    response = await manifestClient.fetch(validatedUrl, {
+      method,
+      headers,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  if (!validateManifestUrl(response.url || validatedUrl)) {
+    await response.body?.cancel().catch(() => {});
+    throw new Error('HLS resource redirected to an unsupported host');
+  }
+  return response;
 }
 
 async function getPlayableManifest(embedUrl, requestedManifestUrl, playbackPath) {
@@ -269,8 +305,10 @@ async function closeAll() {
 module.exports = {
   decodeEmbedUrl,
   decodeManifestUrl,
+  fetchStreamedResource,
   encodeEmbedUrl,
   encodeManifestUrl,
+  resourceProxyUrl,
   getPlayableManifest,
   playbackUrl,
   rewriteManifest,

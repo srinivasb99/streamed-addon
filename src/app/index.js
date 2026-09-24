@@ -2,27 +2,24 @@
 
 require('dotenv').config();
 const path = require('path');
+const { Readable } = require('stream');
+const { pipeline } = require('stream/promises');
 const express = require('express');
 const cors = require('cors');
 
 const { buildManifest } = require('../stremio/manifest');
 const { catalogHandler, isLive, metaHandler, streamHandler, toMetaPreview } = require('../stremio/handlers');
 const client = require('../providers/streamed/client');
-const { decodeEmbedUrl, decodeManifestUrl, getPlayableManifest } = require('../streaming/hls-resolver');
+const {
+  decodeEmbedUrl,
+  decodeManifestUrl,
+  fetchStreamedResource,
+  getPlayableManifest,
+} = require('../streaming/hls-resolver');
 
 /** "genre=football&search=x" -> { genre: 'football', search: 'x' } */
 function parseExtra(extraStr) {
-  const out = {};
-  for (const part of String(extraStr || '').split('&')) {
-    const eq = part.indexOf('=');
-    if (eq === -1) continue;
-    try {
-      out[decodeURIComponent(part.slice(0, eq))] = decodeURIComponent(part.slice(eq + 1));
-    } catch {
-      // Skip malformed segments.
-    }
-  }
-  return out;
+  return Object.fromEntries(new URLSearchParams(String(extraStr || '')));
 }
 
 function createApp() {
@@ -103,8 +100,37 @@ function createApp() {
     return streamHandler({ type: req.params.type, id: req.params.id, baseUrl }).then((r) => res.json(r));
   });
 
-  // Stremio requests this URL as media. Resolve the protected embed lazily,
-  // proxy only its small live playlist, and leave signed video segments direct.
+  // HLS.js in Stremio Web needs every playlist, key, and media segment to be
+  // same-origin/CORS-readable. Native desktop clients use this same route, and
+  // Range requests are passed through for efficient media delivery.
+  app.get('/resource/:token', async (req, res) => {
+    const resourceUrl = decodeManifestUrl(req.params.token);
+    if (!resourceUrl) return res.status(400).type('text/plain').send('Invalid HLS resource URL');
+
+    try {
+      const upstream = await fetchStreamedResource(resourceUrl, {
+        method: req.method,
+        range: req.get('range'),
+      });
+      res.status(upstream.status);
+      for (const header of ['content-type', 'content-length', 'content-range', 'accept-ranges']) {
+        const value = upstream.headers.get(header);
+        if (value) res.setHeader(header, value);
+      }
+      res.setHeader('Cache-Control', 'no-store');
+      if (req.method === 'HEAD' || !upstream.body) return res.end();
+      await pipeline(Readable.fromWeb(upstream.body), res);
+    } catch (error) {
+      if (!res.headersSent) {
+        res.status(502).type('text/plain').send('HLS resource could not be loaded');
+      } else {
+        res.destroy(error);
+      }
+    }
+  });
+
+  // Stremio requests this URL as media. Resolve the protected embed lazily and
+  // proxy its HLS playlists while preserving the original CDN host as origin.
   app.get('/play/:token.m3u8', async (req, res) => {
     const embedUrl = decodeEmbedUrl(req.params.token);
     if (!embedUrl) return res.status(400).type('text/plain').send('Invalid playback URL');

@@ -22,14 +22,15 @@ Matches use Stremio's one-video `tv` model: the stream request uses the match
 meta ID (`strmd2_<matchId>`). The handler also accepts the legacy `strmd_` prefix and `:play` suffix
 so existing installations can migrate without breaking.
 
-## Honest limitation
+## Playback compatibility
 
 Streamed provides **browser embed pages** (`embed.st`), not direct video
-files. Each Stremio stream entry therefore sets `externalUrl` to the embed
-page and omits `url`, with `behaviorHints.notWebReady: true` — exactly what the
-[Stremio stream docs](https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/responses/stream.md)
-prescribe for URLs "which should be opened in a browser". In Stremio clients
-these play via *open externally* / the web player, not as native direct streams.
+files. The addon resolves the embed to an HLS playlist at playback time and
+serves the playlist, nested playlists, encryption keys, and media segments
+through its own HTTPS origin. This keeps the HLS request tree CORS-readable
+for Stremio Web and passes byte-range requests through for native desktop
+players. The stream response uses Stremio's `url` field for the addon-hosted
+HLS endpoint; the embed page itself is not returned as a direct video URL.
 
 ## Run it
 
@@ -55,14 +56,16 @@ Install in Stremio: open `http://<host>:7000` and click **Install**, or add
 | `GET /catalog/tv/streamed_sport_football_v2.json` | Football matches |
 | `GET /catalog/tv/streamed_sport_american-football_v2.json` | American Football matches |
 | `GET /catalog/tv/streamed_sport_tennis_v2.json` | Tennis matches |
-
-The manifest exposes first-class catalogs for every sport so Stremio’s catalog selector can filter directly by Football, American Football, Tennis, and the other supported categories. The legacy `streamed_by_sport_v2` endpoint remains accepted for existing installs.
 | `GET /meta/tv/:id.json` | Match details (`:id` = `strmd2_<matchId>`) |
 | `GET /stream/tv/:id.json` | Sorted streams for a match |
+| `GET /play/:token.m3u8` | Resolved HLS playlist for playback |
+| `GET /resource/:token` | Proxied HLS keys and media segments |
 | `GET /api/sports` | Sport list (powers the landing-page filter) |
 | `GET /api/preview/live` | Live matches as meta previews (landing page) |
 | `GET /api/preview/today` | All matches scheduled today as meta previews (landing page) |
 | `GET /health` | Health check (also the Render health check path) |
+
+The manifest exposes first-class catalogs for every sport so Stremio’s catalog selector can filter directly by Football, American Football, Tennis, and the other supported categories. Search is advertised for each catalog, and `skip` is honored for catalog pagination. The legacy `streamed_by_sport_v2` endpoint remains accepted for existing installs.
 
 ## Project layout
 

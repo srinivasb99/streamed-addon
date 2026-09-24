@@ -45,13 +45,29 @@ function buildManifest(baseUrl = '') {
     types: ['tv'],
     idPrefixes: ['strmd2_', 'strmd_'],
     catalogs: [
-      { type: 'tv', id: 'streamed_live_v2', name: 'Streamed — Live Now' },
-      { type: 'tv', id: 'streamed_today_v2', name: 'Streamed — Today' },
-      { type: 'tv', id: 'streamed_popular_v2', name: 'Streamed — Popular' },
+      {
+        type: 'tv',
+        id: 'streamed_live_v2',
+        name: 'Streamed — Live Now',
+        extra: [{ name: 'search', isRequired: false }],
+      },
+      {
+        type: 'tv',
+        id: 'streamed_today_v2',
+        name: 'Streamed — Today',
+        extra: [{ name: 'search', isRequired: false }],
+      },
+      {
+        type: 'tv',
+        id: 'streamed_popular_v2',
+        name: 'Streamed — Popular',
+        extra: [{ name: 'search', isRequired: false }],
+      },
       ...SPORT_CATALOGS.map(([id, name]) => ({
         type: 'tv',
         id: `streamed_sport_${id}_v2`,
         name: `Streamed — ${name}`,
+        extra: [{ name: 'search', isRequired: false }],
       })),
     ],
   };
