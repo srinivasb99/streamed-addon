@@ -10,7 +10,7 @@ const assert = require('node:assert/strict');
 const client = require('../src/providers/streamed/client');
 const { buildManifest } = require('../src/stremio/manifest');
 const { toStremioId, toVideoId, fromStremioId, toMetaPreview } = require('../src/stremio/handlers');
-const { parseExtra } = require('../src/app');
+const { parseExtra } = require('../src/server');
 
 test('Stremio extra path decodes spaces, plus signs, and pagination values', () => {
   assert.deepEqual(parseExtra('search=New+York+%26+LA&skip=100'), {

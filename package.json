@@ -1,20 +1,18 @@
 {
   "name": "streamed-addon",
   "version": "1.1.3",
-  "description": "Stremio addon for live sports with catalogs, metadata and in-app HLS playback.",
-  "main": "src/app/server.js",
+  "description": "Stremio addon for live sports catalogs and Streamed browser embeds.",
+  "main": "src/server.js",
   "scripts": {
-    "start": "node src/app/server.js",
+    "start": "node src/server.js",
     "test": "node --test test/*.test.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
-    "express": "^4.21.2",
-    "impit": "^0.14.3",
-    "playwright-core": "^1.55.0"
+    "express": "^4.21.2"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": "22.x"
   }
 }

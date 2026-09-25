@@ -22,15 +22,13 @@ Matches use Stremio's one-video `tv` model: the stream request uses the match
 meta ID (`strmd2_<matchId>`). The handler also accepts the legacy `strmd_` prefix and `:play` suffix
 so existing installations can migrate without breaking.
 
-## Playback compatibility
+## Playback
 
 Streamed provides **browser embed pages** (`embed.st`), not direct video
-files. The addon resolves the embed to an HLS playlist at playback time and
-serves the playlist, nested playlists, encryption keys, and media segments
-through its own HTTPS origin. This keeps the HLS request tree CORS-readable
-for Stremio Web and passes byte-range requests through for native desktop
-players. The stream response uses Stremio's `url` field for the addon-hosted
-HLS endpoint; the embed page itself is not returned as a direct video URL.
+files. The addon returns the HTTPS embed page through Stremio's `externalUrl`
+field, as specified for browser-opened pages. Stremio opens the Streamed player
+in a browser or browser view; this addon does not claim the embed is a direct
+video stream for the native media player.
 
 ## Run it
 
@@ -39,6 +37,11 @@ npm install
 cp .env.example .env   # optional; defaults to https://streamed.pk
 npm start              # serves on PORT (default 7000)
 ```
+
+The package targets Node.js 22 to match the Docker image and Vercel's function
+runtime. The Express app remains compatible with Render, and Vercel serves the
+same `public/` files from its CDN while routing addon and playback endpoints
+through the Express function.
 
 Install in Stremio: open `http://<host>:7000` and click **Install**, or add
 `http://<host>:7000/manifest.json` via Addons → paste URL → Install.
@@ -58,8 +61,6 @@ Install in Stremio: open `http://<host>:7000` and click **Install**, or add
 | `GET /catalog/tv/streamed_sport_tennis_v2.json` | Tennis matches |
 | `GET /meta/tv/:id.json` | Match details (`:id` = `strmd2_<matchId>`) |
 | `GET /stream/tv/:id.json` | Sorted streams for a match |
-| `GET /play/:token.m3u8` | Resolved HLS playlist for playback |
-| `GET /resource/:token` | Proxied HLS keys and media segments |
 | `GET /api/sports` | Sport list (powers the landing-page filter) |
 | `GET /api/preview/live` | Live matches as meta previews (landing page) |
 | `GET /api/preview/today` | All matches scheduled today as meta previews (landing page) |
@@ -69,10 +70,13 @@ The manifest exposes first-class catalogs for every sport so Stremio’s catalog
 
 ## Project layout
 
-- `src/app/` — Express entry point (`npm start`)
 - `src/stremio/manifest.js` — manifest
 - `src/stremio/handlers.js` — catalog/meta/stream handlers + Stremio mapping
 - `src/providers/streamed/client.js` — Streamed API client, TTL caching, stream sorting
-- `views/public/` — landing page (`index.html`, `styles.css`, `app.js`)
-- `views/assets/` — addon icon
+- `public/` — landing page and addon icon, served by Vercel's CDN and Express
+- `src/server.js` — shared Node 22 entry point for Render and Vercel
 - `test/` — offline unit tests (`npm test`)
+
+The server targets Node.js 22 on both Docker and Vercel. Vercel runs the app as
+a request-driven Function; this repository has no WebSocket service or cron
+job, and a Vercel cron schedule is not used as a keepalive mechanism.

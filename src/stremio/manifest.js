@@ -34,8 +34,8 @@ function buildManifest(baseUrl = '') {
     version: pkg.version || '1.0.0',
     name: 'Streamed',
     description:
-      'Live football, basketball, tennis, MMA and more with in-app playback. ' +
-      'Browse Live, Today and per-sport catalogs, then pick a sorted HD-first stream.',
+      'Open Streamed browser embeds for live football, basketball, tennis, MMA and more. ' +
+      'Browse Live, Today and per-sport catalogs, then choose a source.',
     logo: baseUrl ? `${baseUrl}/assets/icon.svg` : undefined,
     resources: [
       { name: 'catalog', types: ['tv'] },

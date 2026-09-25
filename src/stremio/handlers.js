@@ -3,7 +3,7 @@
 /**
  * Stremio catalog / meta / stream handlers: each takes `{type, id, extra}`
  * and returns a Promise of the response object. HTTP serving is plain
- * Express (see src/app/index.js).
+ * Express (see src/server.js).
  *
  * ID scheme: every match is exposed as `strmd2_<matchId>` where <matchId>
  * is the Streamed API match id (URL-encoded inside the Stremio id). Stremio's
@@ -15,7 +15,6 @@
  */
 
 const client = require('../providers/streamed/client');
-const { playbackUrl } = require('../streaming/hls-resolver');
 
 const ID_PREFIX = 'strmd2_';
 const LEGACY_ID_PREFIX = 'strmd_';
@@ -63,6 +62,24 @@ function sportLabel(category) {
     .split('-')
     .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w))
     .join(' ');
+}
+
+function toSafeEmbedUrl(value) {
+  try {
+    const url = new URL(value);
+    if (
+      url.protocol === 'https:' &&
+      url.hostname === 'embed.st' &&
+      url.pathname.startsWith('/embed/') &&
+      !url.username &&
+      !url.password
+    ) {
+      return url.toString();
+    }
+  } catch {
+    // Ignore malformed or unexpected upstream embed URLs.
+  }
+  return null;
 }
 
 /**
@@ -233,11 +250,10 @@ async function metaHandler({ type, id }) {
  * Aggregates every source of the match, already sorted best-first
  * (HD → English → preferred source → lowest stream number).
  *
- * Embed pages are exposed as addon-hosted HLS resolver URLs. The resolver
- * extracts the selected source's media playlist only when playback begins,
- * so Stremio receives a real video URL and keeps playback in its own player.
+ * Streamed returns browser embed pages rather than direct video files. Use
+ * Stremio's externalUrl field and accept only Streamed's HTTPS embed host.
  */
-async function streamHandler({ type, id, baseUrl = process.env.PUBLIC_BASE_URL || 'http://127.0.0.1:7000' }) {
+async function streamHandler({ type, id }) {
   try {
     if (type !== STREMIO_TYPE) return { streams: [] };
     const matchId = fromStremioId(id);
@@ -247,14 +263,17 @@ async function streamHandler({ type, id, baseUrl = process.env.PUBLIC_BASE_URL |
 
     const streams = await client.getStreamsForMatch(match);
     return {
-      streams: streams.map((s) => {
+      streams: streams.flatMap((s) => {
+        const externalUrl = toSafeEmbedUrl(s.embedUrl);
+        if (!externalUrl) return [];
+
         const quality = s.hd ? 'HD' : 'SD';
         const lang = s.language || 'Unknown';
         const source = String(s.source || 'unknown').toUpperCase();
         return {
           name: `Streamed ${quality}`,
           description: `${match.title}\n${lang} · ${quality} · Source ${source} · Stream ${s.streamNo || 1}`,
-          url: playbackUrl(baseUrl, s.embedUrl),
+          externalUrl,
           behaviorHints: {
             bingeGroup: `streamed-${String(s.source || 'unknown').toLowerCase()}-${s.hd ? 'hd' : 'sd'}`,
           },

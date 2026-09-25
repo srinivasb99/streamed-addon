@@ -34,11 +34,11 @@ const MATCHES = [
 ];
 
 const STREAMS_ALPHA = [
-  { id: 'a1', streamNo: 2, language: 'Spanish', hd: false, embedUrl: 'https://embed.st/a/2', source: 'alpha' },
-  { id: 'a1', streamNo: 1, language: 'English', hd: true, embedUrl: 'https://embed.st/a/1', source: 'alpha' },
+  { id: 'a1', streamNo: 2, language: 'Spanish', hd: false, embedUrl: 'https://embed.st/embed/alpha/a1/2', source: 'alpha' },
+  { id: 'a1', streamNo: 1, language: 'English', hd: true, embedUrl: 'https://embed.st/embed/alpha/a1/1', source: 'alpha' },
 ];
 const STREAMS_MYSTERY = [
-  { id: 'x9', streamNo: 1, language: 'English', hd: true, embedUrl: 'https://embed.st/x/1', source: 'mystery' },
+  { id: 'x9', streamNo: 1, language: 'English', hd: true, embedUrl: 'https://embed.st/embed/mystery/x9/1', source: 'mystery' },
 ];
 
 function stubFetch() {
@@ -139,21 +139,20 @@ test('metaHandler returns full meta, null for unknown', async () => {
   }
 });
 
-test('streamHandler aggregates all sources and sorts HD-first', async () => {
+test('streamHandler returns safe Streamed browser embeds sorted HD-first', async () => {
   const restore = stubFetch();
   try {
     client.clearCache();
     const { streams } = await streamHandler({ type: 'tv', id: 'strmd_m1' });
     assert.equal(streams.length, 3);
     // alpha HD English first, then unknown-source HD English (source rank last), then SD
-    assert.match(streams[0].url, /^http:\/\/127\.0\.0\.1:7000\/play\/.+\.m3u8$/);
-    assert.match(streams[1].url, /^http:\/\/127\.0\.0\.1:7000\/play\/.+\.m3u8$/);
-    assert.match(streams[2].url, /^http:\/\/127\.0\.0\.1:7000\/play\/.+\.m3u8$/);
+    assert.match(streams[0].externalUrl, /^https:\/\/embed\.st\/embed\//);
+    assert.match(streams[1].externalUrl, /^https:\/\/embed\.st\/embed\//);
+    assert.match(streams[2].externalUrl, /^https:\/\/embed\.st\/embed\//);
     for (const s of streams) {
-      assert.equal(s.behaviorHints.notWebReady, undefined, 'HLS.js must be allowed to claim this HTTPS URL in Stremio Web');
       assert.equal(s.behaviorHints.live, undefined);
-      assert.ok(s.url, 'an addon-hosted HLS URL must be set');
-      assert.equal(s.externalUrl, undefined, 'externalUrl would force browser playback');
+      assert.equal(s.url, undefined, 'Streamed supplies browser embed pages, not direct media URLs');
+      assert.ok(s.externalUrl);
       assert.ok(s.description);
     }
     assert.deepEqual(await streamHandler({ type: 'tv', id: 'tt123' }), { streams: [] });
@@ -168,8 +167,36 @@ test('streamHandler resolves the :play video id Stremio sends on press-play', as
     client.clearCache();
     const { streams } = await streamHandler({ type: 'tv', id: 'strmd_m1:play' });
     assert.equal(streams.length, 3);
-    assert.match(streams[0].url, /^http:\/\/127\.0\.0\.1:7000\/play\/.+\.m3u8$/);
+    assert.match(streams[0].externalUrl, /^https:\/\/embed\.st\/embed\//);
   } finally {
+    restore();
+  }
+});
+
+test('streamHandler excludes embed URLs outside Streamed', async () => {
+  const restore = stubFetch();
+  const originalGetStreamsForMatch = client.getStreamsForMatch;
+  client.getStreamsForMatch = async () => [
+    {
+      source: 'alpha',
+      hd: true,
+      embedUrl: 'https://embed.st/embed/alpha/a1/1',
+      streamNo: 1,
+    },
+    {
+      source: 'bad',
+      hd: true,
+      embedUrl: 'https://example.com/embed/redirect',
+      streamNo: 2,
+    },
+  ];
+  try {
+    client.clearCache();
+    const { streams } = await streamHandler({ type: 'tv', id: 'strmd_m1' });
+    assert.equal(streams.length, 1);
+    assert.equal(streams[0].externalUrl, 'https://embed.st/embed/alpha/a1/1');
+  } finally {
+    client.getStreamsForMatch = originalGetStreamsForMatch;
     restore();
   }
 });
